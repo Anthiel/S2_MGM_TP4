@@ -92,6 +92,37 @@ void MainWindow::decimation(MyMesh* _mesh, int percent, QString method)
     }
     else if(method == "Par taille")
     {
+        int baseNbVertice=_mesh->n_edges(),i=0;
+        double nbDecim=baseNbVertice*percent*1.0/100;
+
+        std::vector<float> taille;
+        std::vector<int> IDedge;
+
+        // parcours des arêtes
+        for (MyMesh::EdgeIter curEdge = _mesh->edges_begin(); curEdge != _mesh->edges_end(); curEdge++)
+        {
+            EdgeHandle eh = *curEdge;
+            MyMesh::HalfedgeHandle heh0 = _mesh->halfedge_handle(eh, 0); // la première demi-arête
+
+            VertexHandle vh0 = _mesh->to_vertex_handle(heh0);
+            VertexHandle vh1 = _mesh->from_vertex_handle(heh0);
+
+            OpenMesh::Vec3f test = _mesh->point(vh1) - _mesh->point(vh0);
+            float tmpTaille = test.norm();
+
+            taille.push_back(tmpTaille);
+            IDedge.push_back(eh.idx());
+        }
+
+        for(int i = 0; i<nbDecim ; i++){
+            int idPlusPetit = std::min_element(taille.begin(),taille.end()) - taille.begin();
+
+            collapseEdge(_mesh, IDedge.at(idPlusPetit));
+            taille.erase(taille.begin() + idPlusPetit);
+            IDedge.erase(IDedge.begin() + idPlusPetit);
+        }
+        qDebug() << percent << "pourcent retirer" << i <<"tentatives de colapse" << baseNbVertice-_mesh->n_edges() <<"vertices retirées";
+
 
     }
     else if(method == "Par angle")
